@@ -1,0 +1,6 @@
+wxPython==4.3.1
+python-mpv==1.0.8
+accessible_output2==0.17
+wx-accessible-webview==0.2.0
+# Envío a Chromecast y Google TV (el envío por DLNA no necesita nada).
+pychromecast==14.0.10

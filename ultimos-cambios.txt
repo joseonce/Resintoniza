@@ -1,0 +1,184 @@
+======================================================================
+REGISTRO DE ÚLTIMOS CAMBIOS - TDTChannels (Resintoniza)
+Fecha: 24 de octubre de 2026
+======================================================================
+
+RESUMEN GENERAL:
+- Nuevas opciones en Ajustes -> General:
+  * "Iniciar minimizado": arranca la aplicación minimizada (o directamente en la bandeja si está activa la opción de minimizar a la bandeja).
+  * "Iniciar con Windows": arranca automáticamente la aplicación al iniciar sesión de usuario en Windows (a través de HKCU\Software\Microsoft\Windows\CurrentVersion\Run).
+- Actualizaciones automáticas configuradas por defecto desde GitHub (repositorio joseonce/Resintoniza).
+- Compatibilidad del actualizador tanto con manifiestos JSON propios como directamente con la API de GitHub Releases.
+- Limpieza y exclusión estricta de archivos personales, grabaciones, perfiles, cachés y credenciales de usuario en el repositorio Git y en el paquete comprimido de release.
+
+----------------------------------------------------------------------
+FICHEROS MODIFICADOS:
+----------------------------------------------------------------------
+
+1. tdt/datos.py
+   - Añadidos `iniciarMinimizado` e `iniciarConWindows` a `AJUSTES_WINDOWS_DEFECTO` y a `validar_ajustes()`.
+   - Fijado por defecto `comprobarActualizaciones = True` y `urlActualizaciones` apuntando a GitHub Releases.
+
+2. tdt/tareas.py
+   - Implementadas `configurar_arranque_windows(activar: bool)` y `comprobar_arranque_windows()` gestionando el registro de Windows de forma segura.
+
+3. tdt/actualizacion.py
+   - Añadido soporte para leer versiones directamente de la API de GitHub Releases (`tag_name`, `assets` con `.zip`, `body` como notas).
+
+4. tdt/interfaz.py
+   - Añadidas casillas "Iniciar minimizado" e "Iniciar con Windows" en el diálogo de Ajustes (pestaña General).
+   - Enlace y sincronización del registro de Windows al guardar los ajustes.
+
+5. main.py
+   - Soporte en el arranque para iniciar minimizado o en la bandeja según los ajustes guardados.
+   - Sincronización del inicio con Windows.
+
+6. version.json
+   - Creado manifiesto de versión 1.0.0 para comprobaciones de actualización.
+
+7. .gitignore
+   - Exclusión de archivos de usuario (ajustes, grabaciones, perfiles, cachés, logs, tokens).
+
+======================================================================
+REGISTRO DE ÚLTIMOS CAMBIOS - TDTChannels (Resintoniza)
+Fecha: 23 de octubre de 2026
+======================================================================
+
+RESUMEN GENERAL:
+Soporte completo para minimizar la aplicación a la bandeja del sistema:
+opción de configuración "Minimizar a la bandeja", acción directa en el
+menú Archivo con atajo Ctrl+M, aviso al cerrar si hay grabaciones programadas
+pendientes con opción de ocultar en la bandeja, restauración con un clic
+y menú contextual enriquecido en el icono de la bandeja.
+
+----------------------------------------------------------------------
+FICHEROS MODIFICADOS:
+----------------------------------------------------------------------
+
+1. tdt/datos.py
+   - Añadido el ajuste `minimizarABandeja` (por defecto `False`) a
+     `AJUSTES_WINDOWS_DEFECTO` y a la validación de ajustes booleanos.
+
+2. tdt/teclas.py
+   - Registrada la acción `archivo_bandeja` ("Ocultar en la bandeja del sistema")
+     con atajo de teclado predeterminado `Ctrl+M` en la sección General.
+
+3. tdt/interfaz.py
+   - Añadida la casilla "Minimizar a la bandeja" en Ajustes -> General.
+   - Enlace al evento `wx.EVT_ICONIZE` para interceptar la minimización
+     estándar y enviar la ventana a la bandeja si el ajuste está activado.
+   - Añadida la opción en el menú Archivo (`archivo_bandeja`).
+   - En `al_cerrar()`, detección de grabaciones programadas pendientes:
+     aviso interactivo con opción de enviar a la bandeja para mantenerlas activas.
+   - En `IconoBandeja`: texto dinámico que informa de grabaciones en segundo plano,
+     reproducción activa o grabaciones programadas pendientes; restauración
+     mediante clic izquierdo o doble clic; y menú con acceso a Grabaciones.
+   - Anuncios accesibles por voz y barra de estado al ocultar y restaurar la ventana.
+
+4. tests/test_arranque.py
+   - Añadida prueba unitaria `test_minimizar_a_bandeja` comprobando el valor por
+     defecto y la validación del nuevo ajuste.
+
+======================================================================
+REGISTRO DE ÚLTIMOS CAMBIOS - TDTChannels (Resintoniza)
+Fecha: 22 de octubre de 2026
+======================================================================
+
+RESUMEN GENERAL:
+Solución a la accesibilidad en la navegación de pestañas (Notebook):
+anuncio de los nombres y posiciones de pestañas para lectores de pantalla
+(NVDA, JAWS, Narrador y voz directa), navegación global con Ctrl+Tab y
+corrección de la compilación portable con cx_Freeze.
+
+----------------------------------------------------------------------
+FICHEROS MODIFICADOS:
+----------------------------------------------------------------------
+
+1. tdt/widgets.py
+   - En `nombrar()`, se excluyó `wx.Notebook` de recibir `SetToolTip()`,
+     evitando que el tooltip general del control interfiera y enmascare
+     los nombres accesibles nativos de cada pestaña individual en Windows.
+   - Se añadió la función `configurar_notebook_accesible(notebook, nombre)`:
+     * Anuncia con `voz.decir()` el nombre y posición de cada pestaña
+       (p. ej.: "Televisión, pestaña 1 de 5", "General, pestaña 1 de 6")
+       al cambiar de página y al recibir el foco.
+     * Notifica a lectores externos mediante `NotifyWinEvent` de Windows
+       (EVENT_OBJECT_SELECTION y EVENT_OBJECT_FOCUS).
+     * Soporta atajos de teclado de pestañas: Ctrl+Tab, Ctrl+Mayús+Tab,
+       Ctrl+AvPág y Ctrl+RePág.
+     * Previene anuncios prematuros antes de que la ventana esté visible.
+
+2. tdt/interfaz.py
+   - Se aplicó `configurar_notebook_accesible()` tanto al notebook principal
+     de la aplicación como al del diálogo de Ajustes.
+   - En `DialogoAjustes`, se difirió el foco inicial con `wx.CallAfter()`
+     para que el lector anuncie la primera pestaña al abrir el diálogo.
+   - En `FiltroTeclas`, se añadió el atajo global de cambio de pestaña
+     (Ctrl+Tab / Ctrl+Mayús+Tab) para cambiar de pestaña desde cualquier
+     control con foco en la ventana o diálogo activo.
+
+3. setup_cx.py
+   - Filtrado dinámico de paquetes candidatos para evitar fallos de
+     compilación por dependencias opcionales ausentes en el entorno.
+   - Creación de carpetas de data limpia con `exist_ok=True`.
+
+4. tools/comprimir.py (nuevo)
+   - Herramienta para empaquetar la distribución compilada en formato ZIP
+     (`build/Resintoniza.zip` y `build/Resintoniza-1.0.0.zip`).
+   - Exclusión estricta de carpetas de usuario y configuración:
+     `data/ajustes.json`, `data/grabaciones/`, `data/perfiles/`,
+     `data/cache/`, `data/logs/` y `data/navegador/`, protegiendo los
+     datos existentes al descomprimir actualizaciones.
+
+======================================================================
+REGISTRO DE ÚLTIMOS CAMBIOS - TDTChannels (Resintoniza)
+Fecha: 20 de octubre de 2026
+======================================================================
+
+RESUMEN GENERAL:
+Solución a los problemas de carga e inicialización del reproductor libmpv
+en Windows 10/11 por ausencia de la dependencia de Vulkan (vulkan-1.dll)
+y mejora en la resiliencia del comprobador de actualizaciones.
+
+----------------------------------------------------------------------
+FICHEROS MODIFICADOS:
+----------------------------------------------------------------------
+
+1. tdt/datos.py
+   - Se añadió la constante VULKAN_DLL = "vulkan-1.dll".
+   - En la función `limpiar_carpeta_mpv()`, se protegió "vulkan-1.dll"
+     para evitar que sea eliminada durante tareas de mantenimiento,
+     limpieza o actualización de la carpeta data/mpv/.
+
+2. tdt/reproductor.py
+   - En la función `cargar_mpv()`, se añadió el directorio del ejecutable
+     (Path(sys.executable).parent) a la búsqueda dinámica de librerías
+     mediante `os.add_dll_directory()`. Esto asegura que libmpv pueda
+     localizar vulkan-1.dll y demás dependencias tanto en ejecución desde
+     código fuente como en distribución congelada (.exe portable).
+
+3. tdt/interfaz.py
+   - En el método `_comprobar_mpv_en_hilo()` de la ventana principal, se
+     envolvió la llamada a `version_libmpv_cargada()` en un bloque try/except.
+     Si la DLL local de libmpv no puede cargarse (error 126 / DLL ausente),
+     ya no se aborta la comprobación de actualizaciones, permitiendo al usuario
+     descargar e instalar la versión funcional desde GitHub.
+   - En `_resultado_mpv()`, se ajustó el mensaje del diálogo de actualización
+     para mostrar "no disponible (error al cargar)" en lugar de fallar si no se
+     detecta la versión instalada.
+
+4. setup_cx.py
+   - Se actualizó el script de congelación con cx_Freeze para incluir
+     automáticamente "vulkan-1.dll" tanto en data/mpv/ como en la raíz de la
+     distribución portable ("build/Resintoniza"), asegurando su funcionamiento
+     autónomo en sistemas Windows 10 sin controladores Vulkan dedicados.
+
+5. LICENCIAS.md
+   - Se agregó la licencia correspondiente al cargador Vulkan Loader
+     (vulkan-1.dll, Khronos Group, bajo licencia Apache 2.0).
+
+6. data/mpv/vulkan-1.dll (archivo binario nuevo)
+   - Incorporación del cargador oficial de Vulkan (Khronos Group) en la
+     carpeta data/mpv/ para resolver la dependencia requerida por las
+     últimas compilaciones de libmpv-2.dll (shinchiro / mpv-winbuild-cmake).
+======================================================================

@@ -1,0 +1,41 @@
+# Entorno virtual y dependencias
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.zip
+
+# Archivos de usuario y datos dinamicos (NUNCA subir al repositorio publico)
+data/ajustes*.json
+data/cache/*
+!data/cache/LEEME.txt
+data/logs/*
+!data/logs/LEEME.txt
+data/grabaciones/*
+!data/grabaciones/LEEME.txt
+data/perfiles/*
+!data/perfiles/LEEME.txt
+data/navegador/
+data/xdp_original.json
+data/sonidos/*.wav
+data/mpv/*.dll
+data/mpv/*.7z
+data/mpv/7zr.exe
+data/bin/*.nvda-addon
+
+# Credenciales, tokens y configuraciones locales
+*token*
+*.env
+github_token*
+
+# Archivos temporales y de desarrollo
+*.log
+*.tmp
+analisis/jadx/
+adjuntos/EPG_dobleM/
+adjuntos/iptv-org/
+.idea/
+.vscode/
