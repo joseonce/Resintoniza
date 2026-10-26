@@ -555,19 +555,18 @@ class Reproductor:
         except Exception:
             return False
 
-    def extension_grabacion(self) -> str:
+    def extension_grabacion(self, formato_tv: str = "ts") -> str:
         """Contenedor que mejor admite lo que se está emitiendo, sin recodificar.
 
-        Con emisiones HLS o MPEG-TS (la mayoría) se guarda en ``.ts``, que es una
-        copia tal cual. Para lo demás, Matroska. En ``.mp4`` no se graba: falla
-        al escribir la cabecera con emisiones en directo.
+        Con emisiones HLS o MPEG-TS (la mayoría) se guarda en ``.ts`` o ``.mp4``
+        según el ajuste elegido. Para lo demás, Matroska (.mkv).
         """
         try:
             formato = str(self.mpv.file_format or "").lower()
         except Exception:
             formato = ""
         if "mpegts" in formato or "hls" in formato:
-            return ".ts"
+            return ".mp4" if (formato_tv or "").lower() == "mp4" else ".ts"
         return ".mkv"
 
     def cerrar(self) -> None:

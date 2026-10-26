@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.1",
   "url": "https://github.com/joseonce/Resintoniza/releases/latest",
-  "notas": "Versión 1.0.0: Televisión y radio en directo para Windows, accesible y en español. Soporte para inicio minimizado, arranque con Windows, grabación programada y actualizaciones automáticas desde GitHub."
+  "notas": "Versión 1.0.1: Posibilidad en Ajustes > Grabación de elegir el formato de grabación de emisiones de TV entre MP4 (.mp4, mayor compatibilidad al pasar archivos a otros sistemas) y MPEG-TS (.ts, formato original)."
 }

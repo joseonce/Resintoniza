@@ -187,7 +187,7 @@ De fábrica cada grabación abre **su propio reproductor, sin imagen ni sonido**
 
 En Ajustes > Grabación puedes cambiar al modo clásico, que graba lo mismo que estás viendo (no descarga dos veces, pero deja el reproductor ocupado).
 
-No se recodifica nada: el archivo es una copia exacta de lo que emiten. Un canal en alta definición ocupa unos **22 megabytes por minuto**; grabando **solo el audio**, unos 2.
+No se recodifica nada: el archivo es una copia exacta de lo que emiten. En las emisiones de TV (HLS) puedes elegir si guardar en **.ts** (formato original de la emisión) o en **.mp4** (para mayor compatibilidad con otros dispositivos o reproductores al pasar la grabación). Un canal en alta definición ocupa unos **22 megabytes por minuto**; grabando **solo el audio**, unos 2.
 
 ### La ventana de grabaciones (Ctrl+Mayús+Z)
 
@@ -197,7 +197,7 @@ Tres listas, de arriba abajo:
 2. **Programadas**: lo que está esperando su hora.
 3. **Archivos grabados**: lo que ya tienes, con su duración y su tamaño.
 
-En cualquiera de ellas, **Intro** abre las opciones de esa fila y **Suprimir** detiene o cancela. Con los archivos puedes **reproducir**, **recortar** el principio o el final (sin recodificar y sin perder calidad), **proteger** una grabación para que la limpieza automática no la toque, **eliminar** o **abrir la carpeta**. Abajo se ve cuánto ocupa todo y cuántos gigabytes quedan libres.
+En cualquiera de ellas, **Intro** abre las opciones de esa fila y **Suprimir** detiene o cancela. Con los archivos puedes **reproducir**, **recortar** el principio o el final (en archivos .ts sin recodificar y sin perder calidad), **proteger** una grabación para que la limpieza automática no la toque, **eliminar** o **abrir la carpeta**. Abajo se ve cuánto ocupa todo y cuántos gigabytes quedan libres.
 
 Las grabaciones guardadas **se reanudan donde las dejaste**.
 
@@ -214,6 +214,7 @@ Una regla es una frase del tipo «graba siempre lo que lleve *Telediario* en La 
 
 En **Ajustes > Grabación**:
 
+- **Formato de grabación de TV**: elegir entre **.ts** (original) o **.mp4** (mayor compatibilidad con otros sistemas).
 - **Márgenes** de antes y después, generales o **por canal** (para los que siempre empiezan tarde).
 - **Carpeta por programa**, para que no se mezcle todo.
 - **Grabar solo el audio**.

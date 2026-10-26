@@ -1,5 +1,45 @@
 ======================================================================
 REGISTRO DE ÚLTIMOS CAMBIOS - TDTChannels (Resintoniza)
+Fecha: 26 de octubre de 2026 - Versión 1.0.1
+======================================================================
+
+RESUMEN GENERAL:
+- Posibilidad en Ajustes -> Grabación de elegir el formato de las grabaciones de TV entre MP4 (.mp4, mayor compatibilidad con otros dispositivos al transferir los archivos) y MPEG-TS (.ts, formato original sin remezclar). Cierra el Issue #1.
+- Actualizada la lógica de selección de contenedor en el reproductor principal y en el grabador en segundo plano para respetar el formato configurado en emisiones HLS y MPEG-TS.
+- Ampliada la suite de pruebas unitarias cubriendo las nuevas opciones de formato y validación de ajustes.
+
+----------------------------------------------------------------------
+FICHEROS MODIFICADOS:
+----------------------------------------------------------------------
+
+1. tdt/__init__.py
+   - Versión incrementada a 1.0.1.
+
+2. tdt/datos.py
+   - Añadido el ajuste `formatoGrabacionTV` (por defecto `"ts"`, opciones `"ts"` y `"mp4"`) a `AJUSTES_WINDOWS_DEFECTO` y a `validar_ajustes()`.
+
+3. tdt/reproductor.py
+   - Método `extension_grabacion(formato_tv="ts")`: devuelve `.mp4` si se ha seleccionado MP4 y la emisión es HLS o MPEG-TS, manteniendo `.ts` por defecto o `.mkv` para el resto de emisiones.
+
+4. tdt/grabacion.py
+   - `GrabadorFondo`: añadido parámetro `formato_tv` en inicialización, almacenamiento en propiedad y asignación del contenedor (.mp4 o .ts) en `_cargado()`.
+   - `GestorFondo`: propagación del parámetro `formato_tv` en `iniciar()`.
+   - `GrabadorFondo.resumen()`: incluido `formato_tv` en los datos del resumen.
+
+5. tdt/interfaz.py
+   - Añadida constante `FORMATOS_GRABACION_TV` con opciones descriptivas.
+   - Diálogo de Ajustes (pestaña Grabación): añadido control selector "Formato de grabación de TV" y texto explicativo.
+   - Guardado del ajuste `formatoGrabacionTV` en `DialogoAjustes.guardar()`.
+   - Propagación del ajuste en `alternar_grabacion()`, `_arrancar_fondo()` y en grabaciones programadas directas.
+
+6. tests/test_grabacion.py
+   - Nuevas pruebas para `formato_tv` en `GrabadorFondo` y para `extension_grabacion()` en `Reproductor`.
+
+7. version.json, tools/publicar_github.py, MANUAL.md, README.md
+   - Actualización de notas de versión y documentación.
+
+======================================================================
+REGISTRO DE ÚLTIMOS CAMBIOS - TDTChannels (Resintoniza)
 Fecha: 24 de octubre de 2026
 ======================================================================
 

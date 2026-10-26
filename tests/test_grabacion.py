@@ -93,6 +93,37 @@ class PruebaGrabadorFondo(unittest.TestCase):
         self.assertEqual(avisos, ["error"])
         self.assertEqual(grabador.situacion, "error")
 
+    def test_formato_tv_por_defecto_y_mp4(self):
+        grabador_defecto = self.nuevo()
+        self.assertEqual(grabador_defecto.formato_tv, "ts")
+        self.assertEqual(grabador_defecto.resumen()["formato_tv"], "ts")
+
+        grabador_mp4 = self.nuevo(formato_tv="mp4")
+        self.assertEqual(grabador_mp4.formato_tv, "mp4")
+        self.assertEqual(grabador_mp4.resumen()["formato_tv"], "mp4")
+
+    def test_extension_grabacion_formato(self):
+        from unittest.mock import MagicMock
+        from tdt.reproductor import Reproductor
+
+        repro = object.__new__(Reproductor)
+        repro.mpv = MagicMock()
+
+        # Con emisión HLS
+        repro.mpv.file_format = "hls"
+        self.assertEqual(repro.extension_grabacion("ts"), ".ts")
+        self.assertEqual(repro.extension_grabacion("mp4"), ".mp4")
+
+        # Con emisión MPEG-TS
+        repro.mpv.file_format = "mpegts"
+        self.assertEqual(repro.extension_grabacion("ts"), ".ts")
+        self.assertEqual(repro.extension_grabacion("mp4"), ".mp4")
+
+        # Con emisión matroska u otro formato
+        repro.mpv.file_format = "matroska,webm"
+        self.assertEqual(repro.extension_grabacion("ts"), ".mkv")
+        self.assertEqual(repro.extension_grabacion("mp4"), ".mkv")
+
 
 class PruebaGestor(unittest.TestCase):
     def test_varias_a_la_vez_y_parada(self):

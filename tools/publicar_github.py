@@ -26,7 +26,10 @@ def get_token() -> str:
 TOKEN = get_token()
 REPO_OWNER = "joseonce"
 REPO_NAME = "Resintoniza"
-VERSION = "1.0.0"
+try:
+    from tdt import VERSION
+except ImportError:
+    VERSION = "1.0.1"
 TAG_NAME = f"v{VERSION}"
 RELEASE_NAME = f"Resintoniza {TAG_NAME}"
 RAIZ = Path(__file__).resolve().parent.parent
@@ -89,8 +92,8 @@ def subir_codigo_fuente():
 
     # Añadir archivos ignorando los de usuario (.gitignore)
     subprocess.run(["git", "add", "-A"], cwd=RAIZ, check=True)
-    subprocess.run(["git", "commit", "-m", f"Versión {VERSION}: Televisión y radio accesible para Windows"], cwd=RAIZ, check=False)
-    subprocess.run(["git", "push", "-u", "origin", "main", "--force"], cwd=RAIZ, check=True)
+    subprocess.run(["git", "commit", "-m", f"Versión {VERSION}: Opción en ajustes para grabar TV en MP4 además de TS (Closes #1)"], cwd=RAIZ, check=False)
+    subprocess.run(["git", "push", "-u", "origin", "main"], cwd=RAIZ, check=True)
     clean_remote = f"https://github.com/{REPO_OWNER}/{REPO_NAME}.git"
     subprocess.run(["git", "remote", "set-url", "origin", clean_remote], cwd=RAIZ, check=True)
     print("  Código fuente subido correctamente a GitHub!")
@@ -108,6 +111,7 @@ def crear_o_obtener_release():
                 f"### Resintoniza {TAG_NAME}\n\n"
                 "Televisión y radio en directo para Windows, accesible y en español.\n\n"
                 "#### Novedades de esta versión:\n"
+                "- Opción en Ajustes > Grabación para elegir el formato de las grabaciones de TV entre MP4 (.mp4, mayor compatibilidad con otros dispositivos) y MPEG-TS (.ts, formato original sin remezclar). Cierra #1.\n"
                 "- Opción para iniciar minimizado (en barra de tareas o en bandeja del sistema).\n"
                 "- Opción para iniciar automáticamente con Windows (HKCU Run).\n"
                 "- Actualizaciones automáticas integradas directamente desde GitHub Releases.\n"
@@ -171,11 +175,23 @@ def subir_zip_a_release(release):
         print(f"  URL de descarga directa: {res.get('browser_download_url')}")
 
 
+def cerrar_issue_1():
+    print("\n[5/5] Comprobando y cerrando Issue #1 en GitHub...")
+    try:
+        payload = json.dumps({"state": "closed"}).encode("utf-8")
+        api_request(f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/issues/1",
+                    data=payload, method="PATCH", headers={"Content-Type": "application/json"})
+        print("  Issue #1 cerrado con éxito en GitHub.")
+    except Exception as err:
+        print(f"  Nota al cerrar Issue #1: {err}")
+
+
 def main():
     repo = verificar_o_crear_repositorio()
     subir_codigo_fuente()
     rel = crear_o_obtener_release()
     subir_zip_a_release(rel)
+    cerrar_issue_1()
     print("\n========================================================")
     print(f"  [PUBLICACIÓN COMPLETADA CON ÉXITO]")
     print(f"  Repositorio: {repo.get('html_url')}")

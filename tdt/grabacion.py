@@ -182,7 +182,7 @@ class GrabadorFondo:
 
     def __init__(self, clave: str, fuente, base: Path, carpeta_mpv: Path, on_evento=None, canal: str = "",
                  titulo: str = "", calidad: str = "max", nivel_buffer: str = "normal", fin: float | None = None,
-                 resolver=None, solo_audio: bool = False):
+                 resolver=None, solo_audio: bool = False, formato_tv: str = "ts"):
         self.clave = clave
         self.fuente = fuente                 # proveedores.Fuente con la dirección y las cabeceras
         self.base = Path(base)               # ruta sin extensión: el contenedor se decide al cargar
@@ -192,6 +192,7 @@ class GrabadorFondo:
         self.calidad, self.nivel_buffer = calidad, nivel_buffer
         self.fin = fin                       # hora prevista de final (grabaciones programadas)
         self.solo_audio = bool(solo_audio)   # sin vídeo: ocupa una décima parte (medido: 2,1 MB/min frente a 22)
+        self.formato_tv = "mp4" if (formato_tv or "").lower() == "mp4" else "ts"
         self.resolver = resolver             # devuelve una Fuente nueva al reintentar (direcciones que caducan)
         self.inicio = time.time()
         self.archivos: list[Path] = []       # una grabación puede continuar en otro archivo tras un corte
@@ -278,7 +279,10 @@ class GrabadorFondo:
                 formato = str(instancia.file_format or "").lower()
             except Exception:
                 formato = ""
-            extension = ".ts" if ("mpegts" in formato or "hls" in formato) else EXTENSION
+            if "mpegts" in formato or "hls" in formato:
+                extension = ".mp4" if self.formato_tv == "mp4" else ".ts"
+            else:
+                extension = EXTENSION
             destino = ruta_libre(self.base.with_name(self.base.name + extension))
             try:
                 destino.parent.mkdir(parents=True, exist_ok=True)
@@ -403,6 +407,7 @@ class GrabadorFondo:
             "transcurrido": max(0.0, ahora - self.inicio), "restante": restante, "tamano": self.tamano(),
             "archivo": self.archivos[-1].name if self.archivos else "", "error": self.error,
             "partes": len(self.archivos), "inicio": self.inicio, "fin": self.fin, "solo_audio": self.solo_audio,
+            "formato_tv": self.formato_tv,
         }
 
     def estado(self) -> str:
@@ -448,11 +453,11 @@ class GestorFondo:
 
     def iniciar(self, clave: str, fuente, base: Path, canal: str = "", titulo: str = "", calidad: str = "max",
                 nivel_buffer: str = "normal", fin: float | None = None, resolver=None,
-                solo_audio: bool = False) -> GrabadorFondo:
+                solo_audio: bool = False, formato_tv: str = "ts") -> GrabadorFondo:
         if clave in self.grabaciones:
             raise RuntimeError("Esa grabación ya está en marcha.")
         grabador = GrabadorFondo(clave, fuente, base, self.carpeta_mpv, self.on_evento, canal, titulo,
-                                 calidad, nivel_buffer, fin, resolver, solo_audio)
+                                 calidad, nivel_buffer, fin, resolver, solo_audio, formato_tv)
         self.grabaciones[clave] = grabador
         grabador.iniciar()
         return grabador

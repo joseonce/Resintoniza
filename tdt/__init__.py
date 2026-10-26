@@ -2,5 +2,5 @@
 
 NOMBRE_APP = "Resintoniza"
 LEMA = "Televisión y radio en directo, y aquí no hay que resintonizar nada"
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 AUTOR = "ANÓNIMO"

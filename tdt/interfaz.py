@@ -47,6 +47,10 @@ MODOS_GRABACION = [
     ("En segundo plano: no ocupa el reproductor", True),
     ("Con el reproductor: sintoniza el canal y graba lo que suena", False),
 ]
+FORMATOS_GRABACION_TV = [
+    ("MPEG-TS (.ts, formato original)", "ts"),
+    ("MP4 (.mp4, mayor compatibilidad)", "mp4"),
+]
 UNA_SEMANA = 7 * 24 * 3600
 RETROCESO = 30  # segundos que retrocede la pausa del directo
 ESPERAS_REINTENTO = (3, 8, 20)  # segundos entre reintentos cuando se corta la emisión
@@ -182,7 +186,8 @@ class DialogoAjustes(wx.Dialog):
         rejilla.Add((0, 0))
         rejilla.Add(wx.StaticText(grabaciones, label="Con el reproductor se graba lo mismo que estás viendo, sin descargarlo dos veces, pero el reproductor queda ocupado."), 0)
         rejilla.Add((0, 0))
-        rejilla.Add(wx.StaticText(grabaciones, label="El formato lo elige la emisión: .ts en las emisiones HLS (casi todas) y Matroska (.mkv) en el resto. No se recodifica nada."), 0)
+        self.formato_grabacion = fila(grabaciones, rejilla, "Formato de grabación de &TV:", lambda: eleccion(grabaciones, FORMATOS_GRABACION_TV, windows.get("formatoGrabacionTV", "ts")))
+        rejilla.Add(wx.StaticText(grabaciones, label="En emisiones HLS/MPEG-TS puedes elegir .ts (original de la emisión) o .mp4 (mayor compatibilidad con otros dispositivos).\nEn el resto de formatos no HLS se usa Matroska (.mkv). No se recodifica nada."), 0)
         rejilla.Add((0, 0))
         self.solo_audio_grabacion = casilla(grabaciones, rejilla, "Grabar solo el a&udio:", "Sin imagen: ocupa una décima parte (medido: 2 megabytes por minuto en vez de 22)", windows.get("grabarSoloAudio", False))
         self.margen_antes = fila(grabaciones, rejilla, "Empezar &antes de la hora (minutos):", lambda: wx.SpinCtrl(grabaciones, min=0, max=60, initial=int(windows.get("margenAntes", 0))))
@@ -352,6 +357,7 @@ class DialogoAjustes(wx.Dialog):
         windows["carpetaGrabaciones"] = "" if carpeta == str(self.datos.raiz / "grabaciones") else carpeta
         windows["grabacionSegundoPlano"] = MODOS_GRABACION[self.modo_grabacion.GetSelection()][1]
         windows["maximoGrabacionesFondo"] = self.maximo_fondo.GetValue()
+        windows["formatoGrabacionTV"] = FORMATOS_GRABACION_TV[self.formato_grabacion.GetSelection()][1]
         windows["grabarSoloAudio"] = self.solo_audio_grabacion.GetValue()
         windows["margenAntes"] = self.margen_antes.GetValue()
         windows["margenDespues"] = self.margen_despues.GetValue()
@@ -3006,7 +3012,8 @@ class VentanaPrincipal(wx.Frame):
             self.grabacion_terminada(ruta)
             return
         nombre = self.canal_actual.nombre if self.canal_actual else "emisión"
-        destino = grabacion.carpeta(self.datos) / grabacion.nombre_archivo(nombre, extension=self.reproductor.extension_grabacion())
+        formato_tv = self.datos.windows.get("formatoGrabacionTV", "ts")
+        destino = grabacion.carpeta(self.datos) / grabacion.nombre_archivo(nombre, extension=self.reproductor.extension_grabacion(formato_tv))
         try:
             ruta = self.grabador.iniciar(destino, nombre)
         except RuntimeError as error:
@@ -3097,7 +3104,8 @@ class VentanaPrincipal(wx.Frame):
             gestor.iniciar(clave, fuente, base, canal.nombre, titulo, self.datos.windows.get("calidad", "max"),
                            self.datos.windows.get("bufferRecepcion", "normal"), fin,
                            lambda: self._fuente_reproducible(canal, emision)[0],
-                           bool(self.datos.windows.get("grabarSoloAudio", False)))
+                           bool(self.datos.windows.get("grabarSoloAudio", False)),
+                           self.datos.windows.get("formatoGrabacionTV", "ts"))
         except RuntimeError as fallo:
             self._grabacion_imposible(entrada, str(fallo), entrada is not None)
             return
@@ -3686,7 +3694,8 @@ class VentanaPrincipal(wx.Frame):
             self.grabador = grabacion.Grabador(self.reproductor)
         if self.grabador.activa:
             return
-        destino = grabacion.carpeta(self.datos) / grabacion.nombre_archivo(entrada["canal"], entrada["titulo"], entrada["inicio"], self.reproductor.extension_grabacion())
+        formato_tv = self.datos.windows.get("formatoGrabacionTV", "ts")
+        destino = grabacion.carpeta(self.datos) / grabacion.nombre_archivo(entrada["canal"], entrada["titulo"], entrada["inicio"], self.reproductor.extension_grabacion(formato_tv))
         try:
             ruta = self.grabador.iniciar(destino, entrada["canal"])
         except RuntimeError as error:
@@ -4204,7 +4213,7 @@ class VentanaPrincipal(wx.Frame):
             "Las cuentas traen también sus películas y series, que aparecen en su propia pestaña, y su programación. La contraseña se guarda cifrada con la protección de datos de Windows.\n\n"
             "Grabar: en Ajustes > Grabación se elige cómo. De fábrica se graba en segundo plano: cada grabación abre su propio reproductor, sin imagen ni sonido, así que puedes seguir escuchando o viendo otra cosa, "
             "grabar varios canales a la vez y pausar, cambiar de canal o detener sin que le pase nada a lo que se está grabando. La otra opción graba lo que suena con el reproductor principal, sin descargarlo dos veces, pero lo deja ocupado. "
-            "El formato lo elige la propia emisión (.ts en las emisiones HLS, que son casi todas) y no se recodifica nada. Desde la programación se puede grabar un programa concreto, y la aplicación lo hace a su hora siempre que esté abierta. "
+            "En las emisiones de TV puedes elegir si guardar en .ts o en .mp4 (para mayor compatibilidad), y no se recodifica nada. Desde la programación se puede grabar un programa concreto, y la aplicación lo hace a su hora siempre que esté abierta. "
             f"En {k('herr_grabaciones')} se ve lo que se está grabando ahora, cuánto lleva, cuánto le queda y cuánto ocupa, y se puede detener cualquiera con Suprimir; ahí mismo se recortan las grabaciones sin recodificar, se protegen de la limpieza y se ven los gigabytes libres. "
             "Si el proveedor lo permite, la programación también ofrece «Ver este programa emitido» para lo que ya se emitió.\n\n"
             f"Grabar sin estar delante: en {k('herr_reglas')} se ponen reglas («graba siempre lo que lleve Telediario en La 1»), que miran la guía y programan solas, sin repetir el mismo episodio, el mismo título o más de una vez por semana, según elijas. "

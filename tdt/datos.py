@@ -80,6 +80,7 @@ AJUSTES_WINDOWS_DEFECTO = {
     "carpetaPorPrograma": False,     # cada programa en su subcarpeta
     "ordenPosterior": "",            # orden a ejecutar al terminar una grabación (%f = archivo)
     "grabarSoloAudio": False,        # grabar sin vídeo: ocupa una décima parte
+    "formatoGrabacionTV": "ts",      # formato de grabación en emisiones de TV: "ts" o "mp4"
     "minimoLibreGB": 2,              # espacio libre mínimo para empezar o seguir grabando
     "retencionDias": 0,              # borrar grabaciones de más de N días (0 desactivado)
     "retencionGigas": 0,             # tope de la carpeta en gigabytes (0 desactivado)
@@ -279,6 +280,8 @@ def validar_ajustes(data) -> dict:
         w["calidad"] = calidad
     if windows.get("bufferRecepcion") in ("minimo", "normal", "amplio"):
         w["bufferRecepcion"] = windows["bufferRecepcion"]
+    if windows.get("formatoGrabacionTV") in ("ts", "mp4"):
+        w["formatoGrabacionTV"] = windows["formatoGrabacionTV"]
     minutos = windows.get("timeshiftMinutos")
     if isinstance(minutos, int) and not isinstance(minutos, bool) and 0 <= minutos <= 60:
         w["timeshiftMinutos"] = minutos
