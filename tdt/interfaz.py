@@ -58,6 +58,10 @@ FORMATOS_GRABACION_AUDIO = [
     ("MP3 a 256 kbps (muy alta calidad)", "256k"),
     ("MP3 a 320 kbps (máxima calidad)", "320k"),
 ]
+VERBOSIDAD_CARGA = [
+    ("Simple (solo «Cargando lista» y «Cargada»)", "simple"),
+    ("Detallada (fechas, servidores y recuento de canales)", "detallada"),
+]
 UNA_SEMANA = 7 * 24 * 3600
 RETROCESO = 30  # segundos que retrocede la pausa del directo
 ESPERAS_REINTENTO = (3, 8, 20)  # segundos entre reintentos cuando se corta la emisión
@@ -238,6 +242,7 @@ class DialogoAjustes(wx.Dialog):
         self.retardo = fila(accesibilidad, rejilla, "&Retardo de la voz en milisegundos (0 a 600):", lambda: wx.SpinCtrl(accesibilidad, min=0, max=600, initial=acc["retardoVoz"]))
         self.anunciar_estado = casilla(accesibilidad, rejilla, "&Estado de la reproducción:", "Decir «Reproduciendo», «En pausa», errores…", acc["anunciarEstado"])
         self.anunciar_avisos = casilla(accesibilidad, rejilla, "&Avisos:", "Decir los mensajes de la barra de estado (favoritos, volumen…)", acc["anunciarAvisos"])
+        self.verbosidad_carga = fila(accesibilidad, rejilla, "Verbosidad al &cargar listas:", lambda: eleccion(accesibilidad, VERBOSIDAD_CARGA, acc.get("verbosidadCarga", "simple")))
         rejilla.Add(wx.StaticText(accesibilidad, label="Al moverte por las columnas de las listas (flechas izquierda y derecha, o Ctrl+1 a 9):"), 0, wx.TOP, 8)
         rejilla.Add((0, 0))
         self.decir_fila = casilla(accesibilidad, rejilla, "Número de &fila:", "Decir el número de fila («Fila 3»)", acc["decirFila"])
@@ -352,6 +357,7 @@ class DialogoAjustes(wx.Dialog):
         acc["retardoVoz"] = self.retardo.GetValue()
         acc["anunciarEstado"] = self.anunciar_estado.GetValue()
         acc["anunciarAvisos"] = self.anunciar_avisos.GetValue()
+        acc["verbosidadCarga"] = VERBOSIDAD_CARGA[self.verbosidad_carga.GetSelection()][1]
         acc["decirFila"] = self.decir_fila.GetValue()
         acc["decirColumna"] = self.decir_columna.GetValue()
         acc["decirCelda"] = self.decir_celda.GetValue()
@@ -1942,12 +1948,15 @@ class VentanaPrincipal(wx.Frame):
         self.carga_en_curso = True
         self.generacion += 1
         generacion = self.generacion
+        detallada = self.datos.windows["accesibilidad"].get("verbosidadCarga", "simple") == "detallada"
         if refrescar:
-            self.estado("Cargando contenido: contactando con el servidor de las listas…", voz_texto="Cargando lista")
+            texto = "Cargando contenido: contactando con el servidor de las listas…"
+            self.estado(texto, voz_texto=texto if detallada else "Cargando lista")
         else:
             ultima = self.datos.windows.get("ultimaComprobacion") or 0
             marca = time.strftime("%d/%m/%Y a las %H:%M", time.localtime(ultima)) if ultima else "todavía sin fecha"
-            self.estado(f"Cargando las listas guardadas ({marca}). {modulo_teclas.legible(self.teclas.combo('archivo_actualizar'))} las actualiza.", voz_texto="Cargando lista")
+            texto = f"Cargando las listas guardadas ({marca}). {modulo_teclas.legible(self.teclas.combo('archivo_actualizar'))} las actualiza."
+            self.estado(texto, voz_texto=texto if detallada else "Cargando lista")
         listas = [{"nombre": NOMBRE_LISTA_OFICIAL[t], "url": URL_LISTAS[t][0], "respaldo": URL_LISTAS[t][1], "ruta": "", "formato": "json", "tipo": t, "oficial": True} for t in TIPOS]
         listas += [{"nombre": l["nombre"], "url": l.get("url", ""), "respaldo": None, "ruta": l.get("ruta", ""), "formato": l.get("formato", "auto"), "tipo": l["tipo"], "oficial": False} for l in self.datos.windows["listas"]]
         cuentas = self.cuentas()
@@ -2103,9 +2112,10 @@ class VentanaPrincipal(wx.Frame):
             ultima = self.datos.windows.get("ultimaComprobacion") or 0
             marca = time.strftime("%d/%m/%Y a las %H:%M", time.localtime(ultima)) if ultima else "sin fecha"
             resumen += f" Son las listas guardadas del {marca}; {modulo_teclas.legible(self.teclas.combo('archivo_actualizar'))} las actualiza."
+        detallada = self.datos.windows["accesibilidad"].get("verbosidadCarga", "simple") == "detallada"
         if avisos:
             resumen += " Avisos: " + " ".join(avisos)
-        self.estado(resumen, voz_texto="Cargado")
+        self.estado(resumen, voz_texto=resumen if detallada else "Cargada")
         # Con la guía recién cargada es el momento de mirar las reglas de grabación
         # y de aplicar la limpieza automática, si las hay puestas.
         wx.CallLater(1500, self._tras_cargar)

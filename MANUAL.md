@@ -308,6 +308,7 @@ Es el motivo de ser de esta aplicación, así que hay bastante más de lo normal
 - **Todo se maneja con el teclado.** No hay ninguna función que necesite el ratón.
 - **Listas en columnas** que se leen celda a celda (apartado 4), con **plantillas de lectura** que decides tú.
 - **Voz directa** al lector de pantalla (NVDA, JAWS o la voz del sistema) y a la **línea braille**, con retardo ajustable, para los avisos y el estado de la reproducción.
+- **Verbosidad al cargar listas**: configurable en Ajustes > Accesibilidad entre modo *Simple* (anuncia únicamente «Cargando lista» y «Cargada») y modo *Detallada* (locuta el texto completo con fecha de guardado, servidores y recuento de canales).
 - **Avisos sonoros** cortos para empezar, parar, error, recordatorio, grabación y cambio de canal. Se activan uno a uno.
 - **Anuncio del programa al sintonizar**.
 - **Pista de audiodescripción** elegida sola cuando la emisión la trae.

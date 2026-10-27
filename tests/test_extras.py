@@ -114,5 +114,16 @@ class PruebaCuadrosDeDialogo(unittest.TestCase):
         self.assertEqual(culpables, [], "Usa widgets.pregunta: con Sí y No a secas Escape no cierra.")
 
 
+    def test_verbosidad_carga_ajustes(self):
+        from tdt.datos import AJUSTES_WINDOWS_DEFECTO, validar_ajustes
+
+        self.assertEqual(AJUSTES_WINDOWS_DEFECTO["accesibilidad"]["verbosidadCarga"], "simple")
+        valido = validar_ajustes({"windows": {"accesibilidad": {"verbosidadCarga": "detallada"}}})
+        self.assertEqual(valido["windows"]["accesibilidad"]["verbosidadCarga"], "detallada")
+        invalido = validar_ajustes({"windows": {"accesibilidad": {"verbosidadCarga": "inventada"}}})
+        self.assertEqual(invalido["windows"]["accesibilidad"]["verbosidadCarga"], "simple")
+
+
 if __name__ == "__main__":
     unittest.main()
+

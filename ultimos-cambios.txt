@@ -1,5 +1,17 @@
 ======================================================================
 REGISTRO DE ÚLTIMOS CAMBIOS - TDTChannels (Resintoniza)
+Fecha: 27 de octubre de 2026 - Versión 1.0.5
+======================================================================
+
+RESUMEN GENERAL:
+- Locución de carga de listas corregida y configurable:
+  * Corregida la locución al finalizar la carga para decir "Cargada" (en femenino, en concordancia con la lista de canales) en vez de "Cargado".
+  * Añadida opción de "Verbosidad al cargar listas" en Ajustes > pestaña Accesibilidad.
+  * Permite elegir entre modo "Simple" (solo locuta "Cargando lista" al empezar y "Cargada" al terminar) y modo "Detallada" (locuta el proceso detallado con servidores, fechas guardadas y recuento exacto de canales).
+  * Documentada la nueva opción en el manual de usuario (MANUAL.md).
+
+======================================================================
+REGISTRO DE ÚLTIMOS CAMBIOS - TDTChannels (Resintoniza)
 Fecha: 27 de octubre de 2026 - Versión 1.0.4
 ======================================================================
 

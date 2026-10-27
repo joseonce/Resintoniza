@@ -133,6 +133,7 @@ AJUSTES_WINDOWS_DEFECTO = {
         "decirFila": True,           # navegación por columnas: "Fila 3"
         "decirColumna": True,        # "Canal", "Ahora"…
         "decirCelda": True,          # contenido de la celda
+        "verbosidadCarga": "simple",  # "simple" (solo 'Cargando lista' y 'Cargada') o "detallada"
         "plantillas": {},            # clave de plantilla → texto (ver tdt/plantillas.py)
     },
 }
@@ -382,6 +383,8 @@ def validar_ajustes(data) -> dict:
             w["accesibilidad"][clave] = valor if isinstance(valor, bool) else defecto
         elif isinstance(defecto, int):
             w["accesibilidad"][clave] = valor if isinstance(valor, int) and not isinstance(valor, bool) and 0 <= valor <= 600 else defecto
+        elif isinstance(defecto, str):
+            w["accesibilidad"][clave] = valor if isinstance(valor, str) and valor in ("simple", "detallada") else defecto
         elif isinstance(defecto, dict):
             w["accesibilidad"][clave] = {k: v for k, v in valor.items() if isinstance(k, str) and isinstance(v, str)} if isinstance(valor, dict) else {}
     return limpio
