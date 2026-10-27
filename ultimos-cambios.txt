@@ -1,5 +1,42 @@
 ======================================================================
 REGISTRO DE ÚLTIMOS CAMBIOS - TDTChannels (Resintoniza)
+Fecha: 27 de octubre de 2026 - Versión 1.0.3
+======================================================================
+
+RESUMEN GENERAL:
+- Implementado sistema de actualización automática completa (inspirado en el relevo transaccional de YouTubeDownloader):
+  * Botón "Actualizar ahora" en el diálogo de versiones que descarga la versión nueva directamente en segundo plano.
+  * Barra de progreso con porcentaje, tamaño descargado y locución accesible cada 25% para lectores de pantalla.
+  * Relevo transaccional PowerShell independiente (`install.ps1`) que espera al cierre limpio de la app, desempaqueta la actualización, verifica las sumas de comprobación SHA256 e intercambia las carpetas de forma atómica.
+  * Preservación estricta de los datos de usuario: nunca se tocan ni sobrescriben `ajustes.json`, `data/grabaciones`, `data/perfiles`, `data/logs` ni `data/cache`.
+  * Rollback automático: si la nueva versión falla al arrancar o no confirma disponibilidad, el script restaura automáticamente la versión anterior y muestra un aviso.
+  * Mantenido botón alternativo "Abrir en el navegador" para descargas manuales.
+  * Suite de pruebas automáticas en `tests/test_transaccion.py` cubriendo casos de éxito, ZIP inválido y rollback ante fallo de arranque.
+
+----------------------------------------------------------------------
+FICHEROS MODIFICADOS:
+----------------------------------------------------------------------
+
+1. tdt/__init__.py
+   - Versión incrementada a 1.0.3.
+
+2. tdt/actualizacion.py
+   - Añadido `UPDATE_SCRIPT` transaccional con intercambio atómico y protección de datos.
+   - Implementadas `descargar_actualizacion()` con notificación de progreso y cancelación.
+   - Implementada `lanzar_instalador()` para preparar el entorno temporal y ceder el control al instalador PowerShell.
+
+3. tdt/dialogos.py
+   - Diálogo `DialogoActualizacion` renovado con barra de progreso, estado accesible, botones "Actualizar ahora", "Abrir en el navegador" y "Cancelar descarga".
+
+4. main.py y tdt/interfaz.py
+   - Confirmación de disponibilidad en arranque mediante `RESINTONIZA_UPDATE_READY`.
+   - Propagación del resultado de comprobación de versión a la ventana principal.
+
+5. tests/test_transaccion.py
+   - Nuevas pruebas de integración del script PowerShell.
+
+======================================================================
+REGISTRO DE ÚLTIMOS CAMBIOS - TDTChannels (Resintoniza)
 Fecha: 27 de octubre de 2026 - Versión 1.0.2
 ======================================================================
 

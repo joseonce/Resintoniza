@@ -91,7 +91,7 @@ def subir_codigo_fuente():
 
     # Añadir archivos ignorando los de usuario (.gitignore)
     subprocess.run(["git", "add", "-A"], cwd=RAIZ, check=True)
-    subprocess.run(["git", "commit", "-m", f"Versión {VERSION}: Normalización de enlaces de GitHub Releases y soporte en actualizaciones"], cwd=RAIZ, check=False)
+    subprocess.run(["git", "commit", "-m", f"Versión {VERSION}: Sistema de actualización automática integrada con relevo transaccional PowerShell"], cwd=RAIZ, check=False)
     subprocess.run(["git", "push", "-u", "origin", "main"], cwd=RAIZ, check=True)
     clean_remote = f"https://github.com/{REPO_OWNER}/{REPO_NAME}.git"
     subprocess.run(["git", "remote", "set-url", "origin", clean_remote], cwd=RAIZ, check=True)
@@ -110,12 +110,12 @@ def crear_o_obtener_release():
                 f"### Resintoniza {TAG_NAME}\n\n"
                 "Televisión y radio en directo para Windows, accesible y en español.\n\n"
                 "#### Novedades de esta versión:\n"
-                "- Compatibilidad y normalización automática de enlaces de GitHub Releases: ahora se pueden introducir tanto enlaces a la API de GitHub como enlaces web del navegador (ej. `https://github.com/joseonce/Resintoniza/releases/latest`), reconociéndose y traduciéndose automáticamente.\n"
-                "- Restauración automática de la dirección predeterminada de actualizaciones de GitHub (`https://api.github.com/repos/joseonce/Resintoniza/releases/latest`) en configuraciones existentes que tenían el campo vacío.\n"
-                "- Opción en Ajustes > Grabación para elegir el formato de grabaciones de TV entre MP4 y MPEG-TS.\n"
-                "- Opciones de inicio minimizado e inicio automático con Windows.\n"
-                "- Grabación en segundo plano y programada con margen configurable.\n"
-                "- Accesibilidad total con lectores de pantalla (NVDA, JAWS, SAPI).\n\n"
+                "- **Actualización automática integrada:** Botón «Actualizar ahora» en el diálogo de versiones para descargar e instalar automáticamente la última versión sin tener que hacerlo a mano.\n"
+                "- **Relevo transaccional seguro e independiente:** Script PowerShell que espera al cierre limpio, verifica las sumas SHA256 e intercambia las carpetas de forma atómica.\n"
+                "- **Protección de datos y rollback automático:** Tus ajustes, canales, grabaciones y perfiles se preservan intactos, y ante cualquier fallo al arrancar se restaura automáticamente la versión anterior.\n"
+                "- **Progreso accesible:** Barra de progreso con porcentaje, tamaño descargado y locución accesible para lectores de pantalla (NVDA, JAWS, SAPI).\n"
+                "- Compatibilidad y normalización automática de enlaces de GitHub Releases.\n"
+                "- Opción en Ajustes > Grabación para elegir entre MP4 y MPEG-TS.\n\n"
                 "#### Descarga:\n"
                 "Descarga el archivo `Resintoniza.zip` adjunto abajo, descomprímelo en cualquier carpeta y ejecuta `Resintoniza.exe`."
             )

@@ -1341,26 +1341,76 @@ class DialogoEnviar(wx.Dialog):
 
 
 class DialogoActualizacion(wx.Dialog):
-    """Comprueba si hay una versión nueva de la aplicación."""
+    """Comprueba si hay una versión nueva de la aplicación y la instala de forma segura."""
 
     def __init__(self, parent):
-        super().__init__(parent, title="Versiones de la aplicación", size=(620, 320), style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+        super().__init__(parent, title="Versiones de la aplicación", size=(640, 420), style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
         self.ventana = parent
         self.datos = parent.datos
-        self.resultado: dict = {}
+        self.resultado: dict = getattr(parent, "resultado_app", {}) or {}
+        self._descargando = False
+        self._cancelar = threading.Event()
+        self._temp_zip: str | None = None
+
         caja = wx.BoxSizer(wx.VERTICAL)
         fila = wx.BoxSizer(wx.HORIZONTAL)
         self.url = campo(self, fila, "&Dirección del archivo de versiones:", lambda: wx.TextCtrl(self, value=self.datos.windows.get("urlActualizaciones", "")), 1)
         caja.Add(fila, 0, wx.EXPAND | wx.ALL, 10)
-        self.texto = nombrar(wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY, size=(-1, 120)), "Resultado de la comprobación")
-        self.texto.SetValue(actualizacion.resumen({"configurada": bool(self.datos.windows.get("urlActualizaciones"))}))
+
+        self.texto = nombrar(wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY, size=(-1, 130)), "Resultado de la comprobación")
+        if self.resultado:
+            mensaje = actualizacion.resumen(self.resultado)
+            if self.resultado.get("url"):
+                mensaje += "\nDescarga: " + self.resultado["url"]
+            self.texto.SetValue(mensaje)
+        else:
+            self.texto.SetValue(actualizacion.resumen({"configurada": bool(self.datos.windows.get("urlActualizaciones"))}))
         caja.Add(self.texto, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
+
+        self.progreso = wx.Gauge(self, range=100, style=wx.GA_HORIZONTAL | wx.GA_SMOOTH)
+        caja.Add(self.progreso, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, 10)
+        self.estado_descarga = wx.StaticText(self, label="")
+        caja.Add(self.estado_descarga, 0, wx.LEFT | wx.RIGHT | wx.TOP | wx.BOTTOM, 6)
+
         botones = wx.WrapSizer(wx.HORIZONTAL)
-        for control in (boton(self, "&Comprobar ahora", lambda e: self.comprobar()), boton(self, "&Abrir la descarga", lambda e: self.abrir()), wx.Button(self, wx.ID_CANCEL, "C&errar")):
-            botones.Add(control, 0, wx.RIGHT | wx.BOTTOM, 4)
+        self.btn_comprobar = boton(self, "&Comprobar ahora", lambda e: self.comprobar())
+        self.btn_actualizar = boton(self, "&Actualizar ahora", lambda e: self.actualizar())
+        self.btn_abrir = boton(self, "A&brir en el navegador", lambda e: self.abrir())
+        self.btn_cancelar = boton(self, "C&ancelar descarga", lambda e: self.cancelar_descarga())
+        self.btn_cerrar = wx.Button(self, wx.ID_CANCEL, "C&errar")
+
+        self.btn_cancelar.Hide()
+        botones.Add(self.btn_comprobar, 0, wx.RIGHT | wx.BOTTOM, 4)
+        botones.Add(self.btn_actualizar, 0, wx.RIGHT | wx.BOTTOM, 4)
+        botones.Add(self.btn_abrir, 0, wx.RIGHT | wx.BOTTOM, 4)
+        botones.Add(self.btn_cancelar, 0, wx.RIGHT | wx.BOTTOM, 4)
+        botones.Add(self.btn_cerrar, 0, wx.RIGHT | wx.BOTTOM, 4)
         caja.Add(botones, 0, wx.ALL, 10)
+
+        self._actualizar_estado_botones()
         self.SetSizer(caja)
+        self.Bind(wx.EVT_CLOSE, self.al_cerrar_dialogo)
         self.url.SetFocus()
+
+    def _actualizar_estado_botones(self):
+        hay_descarga = bool(self.resultado.get("hay") and self.resultado.get("url"))
+        self.btn_actualizar.Enable(hay_descarga and not self._descargando)
+        self.btn_abrir.Enable(bool(self.resultado.get("url")) and not self._descargando)
+        self.btn_comprobar.Enable(not self._descargando)
+        self.btn_cerrar.Enable(not self._descargando)
+        if self._descargando:
+            self.btn_cancelar.Show()
+        else:
+            self.btn_cancelar.Hide()
+        self.Layout()
+
+    def al_cerrar_dialogo(self, evento):
+        if self._descargando:
+            if pregunta(self, "¿Deseas cancelar la descarga de la actualización en curso?"):
+                self.cancelar_descarga()
+            else:
+                return
+        evento.Skip()
 
     def comprobar(self):
         direccion = actualizacion.normalizar_url(self.url.GetValue().strip())
@@ -1371,11 +1421,102 @@ class DialogoActualizacion(wx.Dialog):
         self.texto.SetValue("Comprobando…")
         wx.Yield()
         self.resultado = actualizacion.comprobar(direccion)
+        if hasattr(self.ventana, "resultado_app"):
+            self.ventana.resultado_app = self.resultado
         mensaje = actualizacion.resumen(self.resultado)
         if self.resultado.get("url"):
             mensaje += "\nDescarga: " + self.resultado["url"]
         self.texto.SetValue(mensaje)
-        voz.decir(mensaje)
+        self._actualizar_estado_botones()
+        if self.resultado.get("hay") and self.resultado.get("url"):
+            self.btn_actualizar.SetFocus()
+            voz.decir(mensaje + " Pulsa Actualizar ahora para instalarla automáticamente.")
+        else:
+            voz.decir(mensaje)
+
+    def actualizar(self):
+        url_descarga = self.resultado.get("url")
+        if not url_descarga:
+            aviso(self, "No hay ninguna dirección de descarga disponible.")
+            return
+        if self._descargando:
+            return
+        self._descargando = True
+        self._cancelar.clear()
+        self._actualizar_estado_botones()
+        self.progreso.SetValue(0)
+        self.estado_descarga.SetLabel("Iniciando descarga de la actualización...")
+        voz.decir(f"Iniciando descarga de la versión {self.resultado.get('version', '')}. Por favor, espera…")
+        threading.Thread(target=self._hilo_descarga, args=(url_descarga,), daemon=True).start()
+
+    def _hilo_descarga(self, url: str):
+        import tempfile
+        fd, temp_zip = tempfile.mkstemp(prefix="resintoniza_download_", suffix=".zip")
+        os.close(fd)
+        self._temp_zip = temp_zip
+
+        def progreso(pct, descargado, total):
+            wx.CallAfter(self._progreso_descarga, pct, descargado, total)
+
+        try:
+            actualizacion.descargar_actualizacion(url, temp_zip, callback_progreso=progreso, cancelar=self._cancelar)
+            if self._cancelar.is_set():
+                wx.CallAfter(self._descarga_cancelada)
+            else:
+                wx.CallAfter(self._descarga_completada, temp_zip)
+        except Exception as error:
+            try:
+                os.remove(temp_zip)
+            except OSError:
+                pass
+            wx.CallAfter(self._descarga_error, str(error))
+
+    def _progreso_descarga(self, pct, descargado, total):
+        self.progreso.SetValue(pct)
+        mb_down = descargado / (1024 * 1024)
+        mb_total = total / (1024 * 1024)
+        self.estado_descarga.SetLabel(f"Descargando: {pct}% ({mb_down:.1f} MB de {mb_total:.1f} MB)...")
+        if pct in (25, 50, 75):
+            voz.decir(f"Descarga de la actualización al {pct} por ciento.")
+
+    def _descarga_completada(self, temp_zip: str):
+        self.progreso.SetValue(100)
+        self.estado_descarga.SetLabel("¡Descarga completada! Preparando la instalación...")
+        self._descargando = False
+        self._actualizar_estado_botones()
+        version_nueva = self.resultado.get("version", "nueva")
+        mensaje = (
+            f"La versión {version_nueva} se ha descargado correctamente.\n\n"
+            "La aplicación se cerrará ahora para actualizar los archivos y se abrirá automáticamente al terminar.\n\n"
+            "Tus canales, listas, grabaciones y configuraciones se conservarán intactos.\n"
+            "Si ocurriera algún error durante la instalación, se restaurará automáticamente la versión actual."
+        )
+        voz.decir("Descarga completada con éxito. La aplicación se cerrará para aplicar la actualización.")
+        wx.MessageBox(mensaje, f"Actualización lista - {NOMBRE_APP}", wx.OK | wx.ICON_INFORMATION, self)
+        try:
+            actualizacion.lanzar_instalador(temp_zip, ventana=self.ventana)
+        except Exception as error:
+            aviso(self, f"No se pudo iniciar el instalador:\n{error}\nLa versión actual sigue intacta.", icono=wx.ICON_ERROR)
+
+    def _descarga_cancelada(self):
+        self._descargando = False
+        self.progreso.SetValue(0)
+        self.estado_descarga.SetLabel("Descarga cancelada.")
+        self._actualizar_estado_botones()
+        voz.decir("Descarga cancelada.")
+
+    def _descarga_error(self, error: str):
+        self._descargando = False
+        self.progreso.SetValue(0)
+        self.estado_descarga.SetLabel("Error al descargar la actualización.")
+        self._actualizar_estado_botones()
+        voz.decir("Se ha producido un error durante la descarga de la actualización.")
+        aviso(self, f"No se pudo descargar la nueva versión:\n{error}", icono=wx.ICON_ERROR)
+
+    def cancelar_descarga(self):
+        if self._descargando:
+            self._cancelar.set()
+            self.estado_descarga.SetLabel("Cancelando descarga...")
 
     def abrir(self):
         from .widgets import abrir_navegador

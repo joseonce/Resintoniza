@@ -186,6 +186,19 @@ def main() -> int:
             ventana.Show()
     else:
         ventana.Show()
+
+    def _confirmar_actualizacion():
+        import os
+        from pathlib import Path
+
+        ready = os.environ.pop("RESINTONIZA_UPDATE_READY", None)
+        if ready:
+            try:
+                Path(ready).write_text("ready", encoding="utf-8")
+            except OSError:
+                pass
+
+    wx.CallAfter(_confirmar_actualizacion)
     app.MainLoop()
     return 0
 

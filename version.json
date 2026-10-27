@@ -1,6 +1,7 @@
 {
-  "version": "1.0.2",
+  "version": "1.0.3",
   "url": "https://github.com/joseonce/Resintoniza/releases/latest",
-  "notas": "Versión 1.0.2: Compatibilidad y normalización automática de enlaces de GitHub Releases en Ajustes > Actualizaciones, y restauración automática de la dirección predeterminada de comprobación de versiones si estaba en blanco."
+  "notas": "Versión 1.0.3: Sistema de actualización automática integrada con descarga directa, barra de progreso accesible, relevo transaccional PowerShell independiente y protección con rollback automático sin perder configuraciones ni grabaciones."
 }
+
 

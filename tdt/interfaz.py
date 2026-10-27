@@ -4012,6 +4012,7 @@ class VentanaPrincipal(wx.Frame):
             return
         self.datos.windows["ultimaComprobacionApp"] = int(time.time())
         self.datos.guardar()
+        self.resultado_app = resultado
         if resultado.get("hay"):
             self.estado(actualizacion.resumen(resultado))
 
