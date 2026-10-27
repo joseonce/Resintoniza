@@ -26,13 +26,12 @@ def get_token() -> str:
 TOKEN = get_token()
 REPO_OWNER = "joseonce"
 REPO_NAME = "Resintoniza"
-try:
-    from tdt import VERSION
-except ImportError:
-    VERSION = "1.0.1"
+RAIZ = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(RAIZ))
+from tdt import VERSION
+
 TAG_NAME = f"v{VERSION}"
 RELEASE_NAME = f"Resintoniza {TAG_NAME}"
-RAIZ = Path(__file__).resolve().parent.parent
 ZIP_PATH = RAIZ / "build" / "Resintoniza.zip"
 
 HEADERS_AUTH = {
