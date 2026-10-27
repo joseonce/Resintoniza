@@ -30,7 +30,7 @@ from pathlib import Path
 
 registro = logging.getLogger(__name__)
 EXTENSION = ".mkv"
-EXTENSIONES = (".ts", ".mkv", ".mp4")  # lo que se reconoce como grabación en la carpeta
+EXTENSIONES = (".ts", ".mkv", ".mp4", ".mp3")  # lo que se reconoce como grabación en la carpeta
 PROHIBIDOS = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
 MARGEN_INICIO = 30       # segundos que se empieza antes de la hora
 MARGEN_FIN = 120         # segundos que se sigue grabando después
@@ -88,6 +88,33 @@ def ruta_libre(destino: Path) -> Path:
     return destino.with_name(f"{destino.stem} {int(time.time())}{destino.suffix}")
 
 
+def convertir_a_mp3(origen: Path, destino: Path, bitrate: str = "192k", carpeta_mpv: Path | None = None) -> Path:
+    """Convierte un archivo grabado a MP3 usando libmpv sin interfaz."""
+    from .reproductor import cargar_mpv, locale_c
+
+    origen = Path(origen)
+    destino = Path(destino)
+    if not origen.exists() or origen.stat().st_size == 0:
+        return origen
+    modulo = cargar_mpv(carpeta_mpv)
+    locale_c()
+    b = bitrate if str(bitrate).endswith("k") else f"{bitrate}k"
+    instancia = modulo.MPV(
+        vo="null", ao="null", mute=True, volume=0, osc=False, osd_level=0, terminal=False,
+        keep_open="no", ytdl=False, idle="no",
+        o=str(destino), of="mp3", ovc="null", oac="libmp3lame", oacopts=f"b={b}",
+    )
+    try:
+        instancia.play(str(origen))
+        instancia.wait_for_playback()
+    finally:
+        try:
+            instancia.terminate()
+        except Exception:
+            pass
+    return destino
+
+
 class Grabador:
     """Graba lo que suena ahora mismo usando ``stream-record`` de libmpv."""
 
@@ -96,12 +123,14 @@ class Grabador:
         self.ruta: Path | None = None
         self.inicio: float = 0.0
         self.canal: str = ""
+        self.solo_audio: bool = False
+        self.formato_audio: str = "defecto"
 
     @property
     def activa(self) -> bool:
         return self.ruta is not None
 
-    def iniciar(self, destino: Path, canal: str = "") -> Path:
+    def iniciar(self, destino: Path, canal: str = "", solo_audio: bool = False, formato_audio: str = "defecto") -> Path:
         """Empieza a grabar en ``destino``. Lanza RuntimeError si no se puede."""
         if self.activa:
             raise RuntimeError("Ya hay una grabación en marcha.")
@@ -114,6 +143,8 @@ class Grabador:
         except Exception as error:
             raise RuntimeError(f"El reproductor no pudo empezar a grabar: {error}") from error
         self.ruta, self.inicio, self.canal = destino, time.time(), canal
+        self.solo_audio = bool(solo_audio)
+        self.formato_audio = str(formato_audio or "defecto")
         registro.info("Grabación iniciada en %s", destino)
         return destino
 
@@ -122,7 +153,11 @@ class Grabador:
         if not self.activa:
             return None, 0.0, 0
         ruta, inicio = self.ruta, self.inicio
+        solo_audio, formato_audio = self.solo_audio, self.formato_audio
+        carpeta_mpv = getattr(self.reproductor, "carpeta_mpv", None)
         self.ruta, self.inicio, self.canal = None, 0.0, ""
+        self.solo_audio = False
+        self.formato_audio = "defecto"
         try:
             self.reproductor.mpv["stream-record"] = ""
         except Exception:
@@ -132,6 +167,19 @@ class Grabador:
             tamano = ruta.stat().st_size if ruta and ruta.exists() else 0
         except OSError:
             tamano = 0
+        if solo_audio and formato_audio != "defecto" and ruta and ruta.exists() and tamano > 0:
+            try:
+                destino_mp3 = ruta_libre(ruta.with_suffix(".mp3"))
+                convertir_a_mp3(ruta, destino_mp3, bitrate=formato_audio, carpeta_mpv=carpeta_mpv)
+                if destino_mp3.exists() and destino_mp3.stat().st_size > 0:
+                    try:
+                        ruta.unlink(missing_ok=True)
+                    except OSError:
+                        pass
+                    ruta = destino_mp3
+                    tamano = ruta.stat().st_size
+            except Exception:
+                registro.exception("Error convirtiendo grabación a MP3")
         registro.info("Grabación detenida: %s (%s bytes)", ruta, tamano)
         return ruta, time.time() - inicio, tamano
 
@@ -182,7 +230,7 @@ class GrabadorFondo:
 
     def __init__(self, clave: str, fuente, base: Path, carpeta_mpv: Path, on_evento=None, canal: str = "",
                  titulo: str = "", calidad: str = "max", nivel_buffer: str = "normal", fin: float | None = None,
-                 resolver=None, solo_audio: bool = False, formato_tv: str = "ts"):
+                 resolver=None, solo_audio: bool = False, formato_tv: str = "ts", formato_audio: str = "defecto"):
         self.clave = clave
         self.fuente = fuente                 # proveedores.Fuente con la dirección y las cabeceras
         self.base = Path(base)               # ruta sin extensión: el contenedor se decide al cargar
@@ -193,6 +241,7 @@ class GrabadorFondo:
         self.fin = fin                       # hora prevista de final (grabaciones programadas)
         self.solo_audio = bool(solo_audio)   # sin vídeo: ocupa una décima parte (medido: 2,1 MB/min frente a 22)
         self.formato_tv = "mp4" if (formato_tv or "").lower() == "mp4" else "ts"
+        self.formato_audio = str(formato_audio or "defecto")
         self.resolver = resolver             # devuelve una Fuente nueva al reintentar (direcciones que caducan)
         self.inicio = time.time()
         self.archivos: list[Path] = []       # una grabación puede continuar en otro archivo tras un corte
@@ -378,6 +427,24 @@ class GrabadorFondo:
                 registro.debug("No se pudo cerrar stream-record", exc_info=True)
             # ``terminate`` espera a los hilos de mpv: se hace aparte para no colgar la interfaz.
             threading.Thread(target=_terminar, args=(instancia,), daemon=True).start()
+        if self.solo_audio and self.formato_audio != "defecto" and self.archivos:
+            nuevos = []
+            for arc in self.archivos:
+                if arc.exists() and arc.stat().st_size > 0:
+                    try:
+                        destino_mp3 = ruta_libre(arc.with_suffix(".mp3"))
+                        convertir_a_mp3(arc, destino_mp3, bitrate=self.formato_audio, carpeta_mpv=self.carpeta_mpv)
+                        if destino_mp3.exists() and destino_mp3.stat().st_size > 0:
+                            try:
+                                arc.unlink(missing_ok=True)
+                            except OSError:
+                                pass
+                            nuevos.append(destino_mp3)
+                            continue
+                    except Exception:
+                        registro.exception("Error convirtiendo parte de grabación de fondo a MP3")
+                nuevos.append(arc)
+            self.archivos = nuevos
         segundos = time.time() - self.inicio if not ya_parada else 0.0
         return (self.archivos[-1] if self.archivos else None), segundos, self.tamano()
 
@@ -453,11 +520,11 @@ class GestorFondo:
 
     def iniciar(self, clave: str, fuente, base: Path, canal: str = "", titulo: str = "", calidad: str = "max",
                 nivel_buffer: str = "normal", fin: float | None = None, resolver=None,
-                solo_audio: bool = False, formato_tv: str = "ts") -> GrabadorFondo:
+                solo_audio: bool = False, formato_tv: str = "ts", formato_audio: str = "defecto") -> GrabadorFondo:
         if clave in self.grabaciones:
             raise RuntimeError("Esa grabación ya está en marcha.")
         grabador = GrabadorFondo(clave, fuente, base, self.carpeta_mpv, self.on_evento, canal, titulo,
-                                 calidad, nivel_buffer, fin, resolver, solo_audio, formato_tv)
+                                 calidad, nivel_buffer, fin, resolver, solo_audio, formato_tv, formato_audio)
         self.grabaciones[clave] = grabador
         grabador.iniciar()
         return grabador

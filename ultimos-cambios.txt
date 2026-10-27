@@ -1,5 +1,23 @@
 ======================================================================
 REGISTRO DE ÚLTIMOS CAMBIOS - TDTChannels (Resintoniza)
+Fecha: 27 de octubre de 2026 - Versión 1.0.4
+======================================================================
+
+RESUMEN GENERAL:
+- Locución breve y concisa al cargar listas:
+  * Al iniciar la aplicación o pulsar actualizar listas, el lector de pantalla locuta únicamente "Cargando lista" al inicio y "Cargado" al finalizar.
+  * La barra de estado visual mantiene el detalle completo de canales, fecha de actualización y atajos para consulta visual o inspección directa.
+- Grabación de audio en formato MP3 con varias calidades:
+  * Para emisiones de radio y emisiones de televisión con la imagen deshabilitada (modo solo audio / sin vídeo), se añade opción para grabar en MP3 además del formato original por defecto.
+  * Configurable en Ajustes > pestaña Grabación: elección entre formato por defecto y MP3 a 128 kbps, 192 kbps, 256 kbps y 320 kbps.
+  * Codificación integrada y ultra-rápida utilizando los codecs incluidos en libmpv (libmp3lame) sin herramientas externas.
+  * Extensión `.mp3` añadida a la gestión y listado de archivos de grabaciones.
+- Documentación en MANUAL.md:
+  * Aclarado expresamente que el atajo Ctrl+Alt+R graba o detiene la grabación del último canal reproducido, no del canal que tenga el foco en la lista.
+- Publicación de la versión 1.0.4 en GitHub Releases para actualización automática integrada.
+
+======================================================================
+REGISTRO DE ÚLTIMOS CAMBIOS - TDTChannels (Resintoniza)
 Fecha: 27 de octubre de 2026 - Versión 1.0.3
 ======================================================================
 

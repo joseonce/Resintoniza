@@ -176,7 +176,7 @@ Muchos canales no traen programación en su lista de origen, así que la aplicac
 
 | Quiero… | Cómo |
 |---|---|
-| Grabar **lo que estoy oyendo ahora** | **Ctrl+Alt+R**. Se vuelve a pulsar para parar. |
+| Grabar **lo que estoy oyendo ahora** | **Ctrl+Alt+R**. Se vuelve a pulsar para parar. *(Nota: se grabará el **último canal reproducido**, no el que tenga el foco en la lista; para grabar el canal enfocado, usa su menú contextual).* |
 | Grabar **un programa** concreto | En la guía, Intro sobre el programa > Grabar este programa. |
 | Grabar **siempre** un programa | En la guía > Grabarlo siempre, o Herramientas > Grabación > Reglas de grabación automática. |
 | Ver y manejar **lo que hay** | **Ctrl+Mayús+Z** (Herramientas > Grabación > Grabaciones). |
@@ -187,7 +187,9 @@ De fábrica cada grabación abre **su propio reproductor, sin imagen ni sonido**
 
 En Ajustes > Grabación puedes cambiar al modo clásico, que graba lo mismo que estás viendo (no descarga dos veces, pero deja el reproductor ocupado).
 
-No se recodifica nada: el archivo es una copia exacta de lo que emiten. En las emisiones de TV (HLS) puedes elegir si guardar en **.ts** (formato original de la emisión) o en **.mp4** (para mayor compatibilidad con otros dispositivos o reproductores al pasar la grabación). Un canal en alta definición ocupa unos **22 megabytes por minuto**; grabando **solo el audio**, unos 2.
+No se recodifica nada por defecto: el archivo es una copia exacta de lo que emiten. En las emisiones de TV (HLS) puedes elegir si guardar en **.ts** (formato original de la emisión) o en **.mp4** (para mayor compatibilidad con otros dispositivos o reproductores al pasar la grabación). Un canal en alta definición ocupa unos **22 megabytes por minuto**; grabando **solo el audio**, unos 2.
+
+Además, en las emisiones de **radio** y en las de **TV si la imagen está deshabilitada** (modo solo audio o sin vídeo), puedes elegir en **Ajustes > pestaña Grabación** entre el formato original por defecto o codificar automáticamente la grabación en **MP3** a distintas calidades (128 kbps, 192 kbps, 256 kbps o 320 kbps).
 
 ### La ventana de grabaciones (Ctrl+Mayús+Z)
 
@@ -371,7 +373,7 @@ Se cambian todas en **Herramientas > Accesibilidad y teclas > Personalizar tecla
 | Ctrl+Mayús+B | Volver al canal anterior |
 | Ctrl+Mayús+H | Historial de canales |
 | Ctrl+Mayús+A / Ctrl+Mayús+T | Pista de audio / subtítulos |
-| Ctrl+Alt+R | Grabar o detener la grabación |
+| Ctrl+Alt+R | Grabar o detener la grabación del último canal reproducido (no el del foco) |
 | Ctrl+Alt+Z / Ctrl+Alt+X | Retroceder 30 segundos / volver al directo |
 | Ctrl+Alt+U / Ctrl+Alt+C | Modo solo audio / calidad |
 | Ctrl+Alt+D | Datos de la emisión |

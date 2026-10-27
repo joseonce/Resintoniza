@@ -255,5 +255,47 @@ class PruebaFilaEnCurso(unittest.TestCase):
         self.assertEqual(fila["titulo"], "Grabación manual")
 
 
+class PruebaGrabacionAudioMP3(unittest.TestCase):
+    def test_extensiones_incluye_mp3(self):
+        self.assertIn(".mp3", grabacion.EXTENSIONES)
+
+    def test_ajustes_formato_audio(self):
+        from tdt.datos import AJUSTES_WINDOWS_DEFECTO, validar_ajustes
+        self.assertEqual(AJUSTES_WINDOWS_DEFECTO.get("formatoGrabacionAudio"), "defecto")
+        validado = validar_ajustes({"windows": {"formatoGrabacionAudio": "192k"}})
+        self.assertEqual(validado["windows"]["formatoGrabacionAudio"], "192k")
+        invalido = validar_ajustes({"windows": {"formatoGrabacionAudio": "invalido"}})
+        self.assertEqual(invalido["windows"]["formatoGrabacionAudio"], "defecto")
+
+    def test_grabador_convierte_a_mp3_cuando_solo_audio(self):
+        import tempfile
+        from unittest.mock import MagicMock, patch
+
+        reproductor = MagicMock()
+        reproductor.activo = True
+        reproductor.mpv = {}
+        reproductor.carpeta_mpv = Path("mpv")
+        grabador = grabacion.Grabador(reproductor)
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            archivo_ts = Path(tempdir) / "prueba.ts"
+            ruta_iniciada = grabador.iniciar(archivo_ts, canal="Radio 1", solo_audio=True, formato_audio="192k")
+            ruta_iniciada.write_bytes(b"DATOS_DE_AUDIO_FALSOS")
+            self.assertTrue(grabador.solo_audio)
+            self.assertEqual(grabador.formato_audio, "192k")
+
+            def mock_convertir(origen, destino, bitrate, carpeta_mpv):
+                destino.write_bytes(b"MP3_DATOS")
+                return destino
+
+            with patch("tdt.grabacion.convertir_a_mp3", side_effect=mock_convertir) as mock_conv:
+                ruta, seg, tam = grabador.parar()
+                self.assertTrue(mock_conv.called)
+                self.assertEqual(ruta.suffix, ".mp3")
+                self.assertTrue(ruta.exists())
+                self.assertFalse(ruta_iniciada.exists())
+
+
 if __name__ == "__main__":
     unittest.main()
+

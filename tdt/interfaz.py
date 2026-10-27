@@ -51,6 +51,13 @@ FORMATOS_GRABACION_TV = [
     ("MPEG-TS (.ts, formato original)", "ts"),
     ("MP4 (.mp4, mayor compatibilidad)", "mp4"),
 ]
+FORMATOS_GRABACION_AUDIO = [
+    ("Formato original de la emisión (sin recodificar)", "defecto"),
+    ("MP3 a 128 kbps (calidad estándar)", "128k"),
+    ("MP3 a 192 kbps (alta calidad)", "192k"),
+    ("MP3 a 256 kbps (muy alta calidad)", "256k"),
+    ("MP3 a 320 kbps (máxima calidad)", "320k"),
+]
 UNA_SEMANA = 7 * 24 * 3600
 RETROCESO = 30  # segundos que retrocede la pausa del directo
 ESPERAS_REINTENTO = (3, 8, 20)  # segundos entre reintentos cuando se corta la emisión
@@ -188,6 +195,9 @@ class DialogoAjustes(wx.Dialog):
         rejilla.Add((0, 0))
         self.formato_grabacion = fila(grabaciones, rejilla, "Formato de grabación de &TV:", lambda: eleccion(grabaciones, FORMATOS_GRABACION_TV, windows.get("formatoGrabacionTV", "ts")))
         rejilla.Add(wx.StaticText(grabaciones, label="En emisiones HLS/MPEG-TS puedes elegir .ts (original de la emisión) o .mp4 (mayor compatibilidad con otros dispositivos).\nEn el resto de formatos no HLS se usa Matroska (.mkv). No se recodifica nada."), 0)
+        rejilla.Add((0, 0))
+        self.formato_grabacion_audio = fila(grabaciones, rejilla, "Formato de grabación de &audio (radio y TV solo audio):", lambda: eleccion(grabaciones, FORMATOS_GRABACION_AUDIO, windows.get("formatoGrabacionAudio", "defecto")))
+        rejilla.Add(wx.StaticText(grabaciones, label="En radio o al grabar TV sin vídeo, puedes guardar el formato original o codificar a MP3 en varias calidades."), 0)
         rejilla.Add((0, 0))
         self.solo_audio_grabacion = casilla(grabaciones, rejilla, "Grabar solo el a&udio:", "Sin imagen: ocupa una décima parte (medido: 2 megabytes por minuto en vez de 22)", windows.get("grabarSoloAudio", False))
         self.margen_antes = fila(grabaciones, rejilla, "Empezar &antes de la hora (minutos):", lambda: wx.SpinCtrl(grabaciones, min=0, max=60, initial=int(windows.get("margenAntes", 0))))
@@ -358,6 +368,7 @@ class DialogoAjustes(wx.Dialog):
         windows["grabacionSegundoPlano"] = MODOS_GRABACION[self.modo_grabacion.GetSelection()][1]
         windows["maximoGrabacionesFondo"] = self.maximo_fondo.GetValue()
         windows["formatoGrabacionTV"] = FORMATOS_GRABACION_TV[self.formato_grabacion.GetSelection()][1]
+        windows["formatoGrabacionAudio"] = FORMATOS_GRABACION_AUDIO[self.formato_grabacion_audio.GetSelection()][1]
         windows["grabarSoloAudio"] = self.solo_audio_grabacion.GetValue()
         windows["margenAntes"] = self.margen_antes.GetValue()
         windows["margenDespues"] = self.margen_despues.GetValue()
@@ -1898,10 +1909,10 @@ class VentanaPrincipal(wx.Frame):
         self.Refresh()
 
     # --- avisos ------------------------------------------------------------------
-    def estado(self, texto: str, decir: bool = True):
+    def estado(self, texto: str, decir: bool = True, voz_texto: str | None = None):
         self.SetStatusText(texto)
         if decir and self.datos.windows["accesibilidad"]["anunciarAvisos"]:
-            voz.decir(texto, interrumpir=True)
+            voz.decir(voz_texto if voz_texto is not None else texto, interrumpir=True)
 
     def estado_reproduccion(self, texto: str, decir: bool = True):
         self.texto_estado = texto
@@ -1932,11 +1943,11 @@ class VentanaPrincipal(wx.Frame):
         self.generacion += 1
         generacion = self.generacion
         if refrescar:
-            self.estado("Cargando contenido: contactando con el servidor de las listas…")
+            self.estado("Cargando contenido: contactando con el servidor de las listas…", voz_texto="Cargando lista")
         else:
             ultima = self.datos.windows.get("ultimaComprobacion") or 0
             marca = time.strftime("%d/%m/%Y a las %H:%M", time.localtime(ultima)) if ultima else "todavía sin fecha"
-            self.estado(f"Cargando las listas guardadas ({marca}). {modulo_teclas.legible(self.teclas.combo('archivo_actualizar'))} las actualiza.")
+            self.estado(f"Cargando las listas guardadas ({marca}). {modulo_teclas.legible(self.teclas.combo('archivo_actualizar'))} las actualiza.", voz_texto="Cargando lista")
         listas = [{"nombre": NOMBRE_LISTA_OFICIAL[t], "url": URL_LISTAS[t][0], "respaldo": URL_LISTAS[t][1], "ruta": "", "formato": "json", "tipo": t, "oficial": True} for t in TIPOS]
         listas += [{"nombre": l["nombre"], "url": l.get("url", ""), "respaldo": None, "ruta": l.get("ruta", ""), "formato": l.get("formato", "auto"), "tipo": l["tipo"], "oficial": False} for l in self.datos.windows["listas"]]
         cuentas = self.cuentas()
@@ -2094,7 +2105,7 @@ class VentanaPrincipal(wx.Frame):
             resumen += f" Son las listas guardadas del {marca}; {modulo_teclas.legible(self.teclas.combo('archivo_actualizar'))} las actualiza."
         if avisos:
             resumen += " Avisos: " + " ".join(avisos)
-        self.estado(resumen)
+        self.estado(resumen, voz_texto="Cargado")
         # Con la guía recién cargada es el momento de mirar las reglas de grabación
         # y de aplicar la limpieza automática, si las hay puestas.
         wx.CallLater(1500, self._tras_cargar)
@@ -3013,9 +3024,11 @@ class VentanaPrincipal(wx.Frame):
             return
         nombre = self.canal_actual.nombre if self.canal_actual else "emisión"
         formato_tv = self.datos.windows.get("formatoGrabacionTV", "ts")
+        formato_audio = self.datos.windows.get("formatoGrabacionAudio", "defecto")
+        es_solo_audio = (self.canal_actual and self.canal_actual.tipo == "radio") or not self.reproductor.tiene_video() or bool(self.datos.windows.get("soloAudio")) or bool(self.datos.windows.get("grabarSoloAudio"))
         destino = grabacion.carpeta(self.datos) / grabacion.nombre_archivo(nombre, extension=self.reproductor.extension_grabacion(formato_tv))
         try:
-            ruta = self.grabador.iniciar(destino, nombre)
+            ruta = self.grabador.iniciar(destino, nombre, solo_audio=es_solo_audio, formato_audio=formato_audio)
         except RuntimeError as error:
             aviso(self, str(error), icono=wx.ICON_WARNING)
             return
@@ -3100,12 +3113,15 @@ class VentanaPrincipal(wx.Frame):
             self._grabacion_imposible(entrada, motivo, entrada is not None)
             self.programadas_fondo.pop(clave, None)
             return
+        es_solo_audio = (canal.tipo == "radio") or bool(self.datos.windows.get("soloAudio", False)) or bool(self.datos.windows.get("grabarSoloAudio", False))
+        formato_audio = self.datos.windows.get("formatoGrabacionAudio", "defecto")
         try:
             gestor.iniciar(clave, fuente, base, canal.nombre, titulo, self.datos.windows.get("calidad", "max"),
                            self.datos.windows.get("bufferRecepcion", "normal"), fin,
                            lambda: self._fuente_reproducible(canal, emision)[0],
-                           bool(self.datos.windows.get("grabarSoloAudio", False)),
-                           self.datos.windows.get("formatoGrabacionTV", "ts"))
+                           es_solo_audio,
+                           self.datos.windows.get("formatoGrabacionTV", "ts"),
+                           formato_audio=formato_audio)
         except RuntimeError as fallo:
             self._grabacion_imposible(entrada, str(fallo), entrada is not None)
             return
@@ -3695,9 +3711,11 @@ class VentanaPrincipal(wx.Frame):
         if self.grabador.activa:
             return
         formato_tv = self.datos.windows.get("formatoGrabacionTV", "ts")
+        formato_audio = self.datos.windows.get("formatoGrabacionAudio", "defecto")
+        es_solo_audio = (self.canal_actual and self.canal_actual.tipo == "radio") or not self.reproductor.tiene_video() or bool(self.datos.windows.get("soloAudio")) or bool(self.datos.windows.get("grabarSoloAudio"))
         destino = grabacion.carpeta(self.datos) / grabacion.nombre_archivo(entrada["canal"], entrada["titulo"], entrada["inicio"], self.reproductor.extension_grabacion(formato_tv))
         try:
-            ruta = self.grabador.iniciar(destino, entrada["canal"])
+            ruta = self.grabador.iniciar(destino, entrada["canal"], solo_audio=es_solo_audio, formato_audio=formato_audio)
         except RuntimeError as error:
             entrada["estado"] = "error"
             self.datos.guardar()

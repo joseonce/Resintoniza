@@ -1,7 +1,7 @@
 {
-  "version": "1.0.3",
+  "version": "1.0.4",
   "url": "https://github.com/joseonce/Resintoniza/releases/latest",
-  "notas": "Versión 1.0.3: Sistema de actualización automática integrada con descarga directa, barra de progreso accesible, relevo transaccional PowerShell independiente y protección con rollback automático sin perder configuraciones ni grabaciones."
+  "notas": "Versión 1.0.4: Locución breve al iniciar o actualizar listas (solo dice 'Cargando lista' y 'Cargado'), soporte de grabación en formato MP3 con calidades configurables (128, 192, 256 y 320 kbps) para radio y TV sin imagen, y aclaración en el manual sobre Ctrl+Alt+R para grabar el último canal reproducido."
 }
 
 
