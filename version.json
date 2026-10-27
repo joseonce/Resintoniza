@@ -1,5 +1,6 @@
 {
-  "version": "1.0.1",
+  "version": "1.0.2",
   "url": "https://github.com/joseonce/Resintoniza/releases/latest",
-  "notas": "Versión 1.0.1: Posibilidad en Ajustes > Grabación de elegir el formato de grabación de emisiones de TV entre MP4 (.mp4, mayor compatibilidad al pasar archivos a otros sistemas) y MPEG-TS (.ts, formato original)."
+  "notas": "Versión 1.0.2: Compatibilidad y normalización automática de enlaces de GitHub Releases en Ajustes > Actualizaciones, y restauración automática de la dirección predeterminada de comprobación de versiones si estaba en blanco."
 }
+

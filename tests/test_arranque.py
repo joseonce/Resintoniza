@@ -73,6 +73,13 @@ class PruebaFrecuencia(unittest.TestCase):
         self.assertTrue(limpio["windows"]["comprobarActualizaciones"])
         self.assertIn("github.com", limpio["windows"]["urlActualizaciones"])
 
+        # Si venía vacío de ajustes antiguos, restaura el valor por defecto de GitHub
+        limpio_vacio = modulo_datos.validar_ajustes({"windows": {"urlActualizaciones": "   "}})
+        self.assertIn("github.com", limpio_vacio["windows"]["urlActualizaciones"])
+        # Si venía una URL web de GitHub, se normaliza automáticamente a la API
+        limpio_web = modulo_datos.validar_ajustes({"windows": {"urlActualizaciones": "https://github.com/joseonce/Resintoniza"}})
+        self.assertEqual(limpio_web["windows"]["urlActualizaciones"], "https://api.github.com/repos/joseonce/Resintoniza/releases/latest")
+
         limpio = modulo_datos.validar_ajustes({"windows": {"iniciarMinimizado": True, "iniciarConWindows": True}})
         self.assertTrue(limpio["windows"]["iniciarMinimizado"])
         self.assertTrue(limpio["windows"]["iniciarConWindows"])

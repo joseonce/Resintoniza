@@ -289,6 +289,13 @@ def validar_ajustes(data) -> dict:
                   "ordenPosterior", "carpetaSincronizacion"):
         valor = windows.get(clave)
         if isinstance(valor, str):
+            if clave == "urlActualizaciones":
+                limpio_url = valor.strip()
+                if limpio_url:
+                    from . import actualizacion as _actualizacion
+                    w[clave] = _actualizacion.normalizar_url(limpio_url)
+                # Si venía vacío en ajustes antiguos, conserva el valor predeterminado del repositorio
+                continue
             w[clave] = valor.strip()
     frecuencia = windows.get("frecuenciaActualizacion")
     if frecuencia in FRECUENCIAS:

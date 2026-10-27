@@ -1,5 +1,35 @@
 ======================================================================
 REGISTRO DE ÚLTIMOS CAMBIOS - TDTChannels (Resintoniza)
+Fecha: 27 de octubre de 2026 - Versión 1.0.2
+======================================================================
+
+RESUMEN GENERAL:
+- Compatibilidad y normalización automática de enlaces de GitHub Releases en Ajustes -> Actualizaciones y en el diálogo de comprobación de versiones: ahora se pueden introducir tanto enlaces a la API de GitHub como enlaces web del navegador (ej. `https://github.com/joseonce/Resintoniza/releases/latest`), traduciéndose de forma transparente.
+- Restauración automática de la dirección predeterminada de actualizaciones de GitHub (`https://api.github.com/repos/joseonce/Resintoniza/releases/latest`) en configuraciones existentes que tenían el campo vacío.
+- Pruebas unitarias ampliadas para la normalización de URLs de GitHub y preservación de la dirección predeterminada.
+
+----------------------------------------------------------------------
+FICHEROS MODIFICADOS:
+----------------------------------------------------------------------
+
+1. tdt/__init__.py
+   - Versión incrementada a 1.0.2.
+
+2. tdt/actualizacion.py
+   - Implementada función `normalizar_url()` para transformar URLs web de GitHub en endpoints de la API de Releases.
+   - Normalización de la dirección antes de comprobar versiones en `comprobar()`.
+
+3. tdt/datos.py
+   - En `validar_ajustes()`: si `urlActualizaciones` viene vacía de ajustes anteriores, conserva el valor predeterminado del repositorio en lugar de dejarla en blanco, y normaliza la URL si se especifica una dirección web.
+
+4. tdt/dialogos.py e interfaz.py
+   - Normalización automática de la dirección en el diálogo de versiones y en la pestaña de Ajustes.
+
+5. tests/test_plantillas.py y tests/test_arranque.py
+   - Pruebas unitarias para `normalizar_url()`, comprobación de release con URL web y restauración de dirección por defecto.
+
+======================================================================
+REGISTRO DE ÚLTIMOS CAMBIOS - TDTChannels (Resintoniza)
 Fecha: 26 de octubre de 2026 - Versión 1.0.1
 ======================================================================
 

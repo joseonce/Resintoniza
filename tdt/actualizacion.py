@@ -36,6 +36,19 @@ def es_mas_nueva(candidata: str, actual: str = VERSION) -> bool:
     return nueva > vieja
 
 
+def normalizar_url(url: str) -> str:
+    """Convierte URLs web de GitHub en endpoints de la API de Releases."""
+    limpia = (url or "").strip()
+    if not limpia:
+        return ""
+    # Convierte ej. https://github.com/usuario/repo/releases... a https://api.github.com/repos/usuario/repo/releases/latest
+    coincidencia = re.match(r"^https?://github\.com/([^/]+)/([^/]+?)(?:\.git)?(?:/(?:releases|tree|blob).*)?/?$", limpia, re.IGNORECASE)
+    if coincidencia:
+        usuario, repo = coincidencia.group(1), coincidencia.group(2)
+        return f"https://api.github.com/repos/{usuario}/{repo}/releases/latest"
+    return limpia
+
+
 def comprobar(url: str, actual: str = VERSION) -> dict:
     """Consulta el manifiesto. Devuelve un diccionario con el resultado.
 
@@ -45,6 +58,7 @@ def comprobar(url: str, actual: str = VERSION) -> dict:
     vacio = {"hay": False, "version": "", "url": "", "notas": "", "error": "", "configurada": bool(url)}
     if not url:
         return vacio
+    url = normalizar_url(url)
     if not url_http(url):
         return {**vacio, "error": "La dirección de comprobación debe empezar por https:// o http://."}
     try:

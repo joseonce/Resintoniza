@@ -1363,7 +1363,9 @@ class DialogoActualizacion(wx.Dialog):
         self.url.SetFocus()
 
     def comprobar(self):
-        direccion = self.url.GetValue().strip()
+        direccion = actualizacion.normalizar_url(self.url.GetValue().strip())
+        if direccion != self.url.GetValue().strip():
+            self.url.SetValue(direccion)
         self.datos.windows["urlActualizaciones"] = direccion
         self.datos.guardar()
         self.texto.SetValue("Comprobando…")

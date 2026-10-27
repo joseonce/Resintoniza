@@ -378,7 +378,7 @@ class DialogoAjustes(wx.Dialog):
         windows["sonidos"] = self.sonidos.GetValue()
         windows["interfazInvisible"] = self.invisible.GetValue()
         windows["comprobarActualizaciones"] = self.comprobar_app.GetValue()
-        windows["urlActualizaciones"] = self.url_app.GetValue().strip()
+        windows["urlActualizaciones"] = actualizacion.normalizar_url(self.url_app.GetValue().strip())
 
 
 class DialogoPlantillas(wx.Dialog):

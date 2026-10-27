@@ -122,6 +122,24 @@ class Plantillas(unittest.TestCase):
             self.assertEqual(res["url"], "https://github.com/joseonce/Resintoniza/releases/download/v1.2.0/Resintoniza.zip")
             self.assertEqual(res["notas"], "Novedades de la versión 1.2.0")
 
+            # También admite la URL web de GitHub y la normaliza a la API
+            res_web = actualizacion.comprobar("https://github.com/joseonce/Resintoniza/releases/latest", actual="1.0.0")
+            self.assertTrue(res_web["hay"])
+            self.assertEqual(res_web["version"], "1.2.0")
+
+    def test_normalizar_url_github(self):
+        from tdt.actualizacion import normalizar_url
+        esperada = "https://api.github.com/repos/joseonce/Resintoniza/releases/latest"
+        self.assertEqual(normalizar_url("https://github.com/joseonce/Resintoniza"), esperada)
+        self.assertEqual(normalizar_url("https://github.com/joseonce/Resintoniza/"), esperada)
+        self.assertEqual(normalizar_url("https://github.com/joseonce/Resintoniza/releases"), esperada)
+        self.assertEqual(normalizar_url("https://github.com/joseonce/Resintoniza/releases/latest"), esperada)
+        self.assertEqual(normalizar_url("https://github.com/joseonce/Resintoniza.git"), esperada)
+        self.assertEqual(normalizar_url(esperada), esperada)
+        self.assertEqual(normalizar_url("https://ejemplo.com/version.json"), "https://ejemplo.com/version.json")
+        self.assertEqual(normalizar_url(""), "")
+
+
 
 
 if __name__ == "__main__":

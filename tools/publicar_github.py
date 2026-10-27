@@ -92,7 +92,7 @@ def subir_codigo_fuente():
 
     # Añadir archivos ignorando los de usuario (.gitignore)
     subprocess.run(["git", "add", "-A"], cwd=RAIZ, check=True)
-    subprocess.run(["git", "commit", "-m", f"Versión {VERSION}: Opción en ajustes para grabar TV en MP4 además de TS (Closes #1)"], cwd=RAIZ, check=False)
+    subprocess.run(["git", "commit", "-m", f"Versión {VERSION}: Normalización de enlaces de GitHub Releases y soporte en actualizaciones"], cwd=RAIZ, check=False)
     subprocess.run(["git", "push", "-u", "origin", "main"], cwd=RAIZ, check=True)
     clean_remote = f"https://github.com/{REPO_OWNER}/{REPO_NAME}.git"
     subprocess.run(["git", "remote", "set-url", "origin", clean_remote], cwd=RAIZ, check=True)
@@ -111,13 +111,12 @@ def crear_o_obtener_release():
                 f"### Resintoniza {TAG_NAME}\n\n"
                 "Televisión y radio en directo para Windows, accesible y en español.\n\n"
                 "#### Novedades de esta versión:\n"
-                "- Opción en Ajustes > Grabación para elegir el formato de las grabaciones de TV entre MP4 (.mp4, mayor compatibilidad con otros dispositivos) y MPEG-TS (.ts, formato original sin remezclar). Cierra #1.\n"
-                "- Opción para iniciar minimizado (en barra de tareas o en bandeja del sistema).\n"
-                "- Opción para iniciar automáticamente con Windows (HKCU Run).\n"
-                "- Actualizaciones automáticas integradas directamente desde GitHub Releases.\n"
-                "- Navegación completa por teclado y lectores de pantalla (NVDA, JAWS, SAPI).\n"
+                "- Compatibilidad y normalización automática de enlaces de GitHub Releases: ahora se pueden introducir tanto enlaces a la API de GitHub como enlaces web del navegador (ej. `https://github.com/joseonce/Resintoniza/releases/latest`), reconociéndose y traduciéndose automáticamente.\n"
+                "- Restauración automática de la dirección predeterminada de actualizaciones de GitHub (`https://api.github.com/repos/joseonce/Resintoniza/releases/latest`) en configuraciones existentes que tenían el campo vacío.\n"
+                "- Opción en Ajustes > Grabación para elegir el formato de grabaciones de TV entre MP4 y MPEG-TS.\n"
+                "- Opciones de inicio minimizado e inicio automático con Windows.\n"
                 "- Grabación en segundo plano y programada con margen configurable.\n"
-                "- Control parental con bloqueo por PIN.\n\n"
+                "- Accesibilidad total con lectores de pantalla (NVDA, JAWS, SAPI).\n\n"
                 "#### Descarga:\n"
                 "Descarga el archivo `Resintoniza.zip` adjunto abajo, descomprímelo en cualquier carpeta y ejecuta `Resintoniza.exe`."
             )
